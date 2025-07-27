@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoultofCode Certificate Verification</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            /* Light gray background */
+        }
+
+        /* Custom styles for status messages */
+        .status-valid {
+            background-color: #d1fae5;
+            /* Green light */
+            color: #065f46;
+            /* Green dark */
+            border-color: #34d399;
+            /* Green border */
+        }
+
+        .status-expired {
+            background-color: #fee2e2;
+            /* Red light */
+            color: #991b1b;
+            /* Red dark */
+            border-color: #ef4444;
+            /* Red border */
+        }
+
+        .status-invalid {
+            background-color: #fef3c7;
+            /* Yellow light */
+            color: #92400e;
+            /* Yellow dark */
+            border-color: #f59e0b;
+            /* Yellow border */
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md border border-gray-200">
+        <!-- Header Section -->
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
+            VoultofCode Certificate Verification
+        </h1>
+        <p class="text-center text-gray-600 mb-8">
+            Enter your email ID to verify your certificate's authenticity and status.
+        </p>
+
+        <!-- Email Input Form -->
+        <div class="mb-6">
+            <label for="emailInput" class="block text-gray-700 text-sm font-medium mb-2">
+                Email ID
+            </label>
+            <input type="email" id="emailInput" placeholder="e.g., your.email@example.com"
+                class="shadow-sm appearance-none border rounded-md w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out">
+            <p id="emailInputError" class="text-red-500 text-xs italic mt-2 hidden">Please enter a valid email ID.</p>
+        </div>
+
+        <!-- Verify Button -->
+        <button id="verifyButton"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 ease-in-out shadow-md">
+            Verify Certificate
+        </button>
+
+        <!-- Certificate Details Display Area -->
+        <div id="certificateDetails" class="mt-8 p-6 border rounded-lg hidden">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Certificate Details</h2>
+            <div class="space-y-3 text-gray-700">
+                <p><span class="font-medium">Certificate Number:</span> <span id="displayCertNumber"></span></p>
+                <p><span class="font-medium">Issuing Authority:</span> <span id="displayIssuingAuthority"></span></p>
+                <p><span class="font-medium">Issue Date:</span> <span id="displayIssueDate"></span></p>
+                <p><span class="font-medium">Expiration Date:</span> <span id="displayExpirationDate"></span></p>
+            </div>
+            <!-- Certificate Status Message -->
+            <div id="statusMessage" class="mt-5 p-3 rounded-md border text-center font-bold text-lg hidden"></div>
+        </div>
+
+        <!-- Message Box for alerts -->
+        <div id="messageBox" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+                <p id="messageBoxContent" class="text-gray-800 mb-4"></p>
+                <button id="messageBoxClose"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock certificate data - In a real application, this would come from a secure backend API.
+        // Each certificate now includes an 'email' field for verification.
+        const mockCertificates = [
+            {
+                number: 'NCS ID: E19E86-0116588288923', // Using student ID as certificate number
+                email: 'satish8102965213@gmail.com',
+                expirationDate: '2025-08-18',
+                issueDate: '2025-06-18',
+                issuingAuthority: 'VoultofCode Internship Program',
+                status: 'valid'
+            }
+        ];
+
+        // Get DOM elements
+        const emailInput = document.getElementById('emailInput'); // Changed from certificateNumberInput
+        const verifyButton = document.getElementById('verifyButton');
+        const certificateDetailsDiv = document.getElementById('certificateDetails');
+        const displayCertNumber = document.getElementById('displayCertNumber');
+        const displayIssuingAuthority = document.getElementById('displayIssuingAuthority');
+        const displayIssueDate = document.getElementById('displayIssueDate');
+        const displayExpirationDate = document.getElementById('displayExpirationDate');
+        const statusMessageDiv = document.getElementById('statusMessage');
+        const emailInputError = document.getElementById('emailInputError'); // Changed from inputError
+        const messageBox = document.getElementById('messageBox');
+        const messageBoxContent = document.getElementById('messageBoxContent');
+        const messageBoxClose = document.getElementById('messageBoxClose');
+
+        /**
+         * Displays a custom message box instead of alert().
+         * @param {string} message The message to display.
+         */
+        function showMessageBox(message) {
+            messageBoxContent.textContent = message;
+            messageBox.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the custom message box.
+         */
+        function hideMessageBox() {
+            messageBox.classList.add('hidden');
+        }
+
+        // Event listener for the Verify button
+        verifyButton.addEventListener('click', () => {
+            const inputEmail = emailInput.value.trim(); // Changed from inputCertNumber
+
+            // Clear previous error message and hide details
+            emailInputError.classList.add('hidden'); // Updated ID
+            certificateDetailsDiv.classList.add('hidden');
+            statusMessageDiv.classList.add('hidden');
+            statusMessageDiv.className = 'mt-5 p-3 rounded-md border text-center font-bold text-lg hidden'; // Reset classes
+
+            // Basic email validation
+            if (!inputEmail || !inputEmail.includes('@') || !inputEmail.includes('.')) {
+                emailInputError.classList.remove('hidden'); // Updated ID
+                showMessageBox('Please enter a valid email ID to verify.');
+                return;
+            }
+
+            // Simulate API call delay
+            setTimeout(() => {
+                // Find certificate by email (case-insensitive)
+                const foundCertificate = mockCertificates.find(cert => cert.email.toLowerCase() === inputEmail.toLowerCase());
+
+                if (foundCertificate) {
+                    // Display certificate details
+                    displayCertNumber.textContent = foundCertificate.number;
+                    displayIssuingAuthority.textContent = foundCertificate.issuingAuthority;
+                    displayIssueDate.textContent = foundCertificate.issueDate;
+                    displayExpirationDate.textContent = foundCertificate.expirationDate;
+
+                    // Determine and display status based on expiration date
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
+                    const expirationDate = new Date(foundCertificate.expirationDate);
+                    expirationDate.setHours(0, 0, 0, 0); // Normalize expiration date to start of day
+
+                    let statusText = '';
+                    let statusClass = '';
+
+                    if (expirationDate >= today) { // If expiration date is today or in the future
+                        statusText = 'Valid';
+                        statusClass = 'status-valid';
+                    } else {
+                        statusText = 'Expired';
+                        statusClass = 'status-expired';
+                    }
+
+                    statusMessageDiv.textContent = statusText;
+                    statusMessageDiv.classList.add(statusClass);
+                    statusMessageDiv.classList.remove('hidden');
+                    certificateDetailsDiv.classList.remove('hidden');
+
+                } else {
+                    // Certificate not found for the given email
+                    displayCertNumber.textContent = 'N/A';
+                    displayIssuingAuthority.textContent = 'N/A';
+                    displayIssueDate.textContent = 'N/A';
+                    displayExpirationDate.textContent = 'N/A';
+
+                    statusMessageDiv.textContent = 'No Certificate Found for this Email';
+                    statusMessageDiv.classList.add('status-invalid');
+                    statusMessageDiv.classList.remove('hidden');
+                    certificateDetailsDiv.classList.remove('hidden'); // Still show details section, but with N/A
+                }
+            }, 500); // Simulate network delay
+        });
+
+        // Event listener for closing the message box
+        messageBoxClose.addEventListener('click', hideMessageBox);
+
+        // Optional: Clear error/details when input changes
+        emailInput.addEventListener('input', () => { // Updated ID
+            emailInputError.classList.add('hidden'); // Updated ID
+            // Optionally hide details immediately if user starts typing again
+            // certificateDetailsDiv.classList.add('hidden');
+            // statusMessageDiv.classList.add('hidden');
+        });
+    </script>
+</body>
+
+</html>

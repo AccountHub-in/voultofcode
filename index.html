@@ -12,42 +12,68 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            /* Light gray background */
         }
 
-        /* Custom styles for status messages */
-        .status-valid {
-            background-color: #d1fae5;
-            /* Green light */
-            color: #065f46;
-            /* Green dark */
-            border-color: #34d399;
-            /* Green border */
+        /* Custom styles for circular progress bars */
+        .circular-progress {
+            position: relative;
+            height: 100px;
+            width: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .status-expired {
-            background-color: #fee2e2;
-            /* Red light */
-            color: #991b1b;
-            /* Red dark */
-            border-color: #ef4444;
-            /* Red border */
+        .circular-progress::before {
+            content: "";
+            position: absolute;
+            height: 80px;
+            width: 80px;
+            background-color: #fff;
+            border-radius: 50%;
         }
 
-        .status-invalid {
-            background-color: #fef3c7;
-            /* Yellow light */
-            color: #92400e;
-            /* Yellow dark */
-            border-color: #f59e0b;
-            /* Yellow border */
+        .progress-value {
+            position: relative;
+            font-size: 20px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border-top-color: #3b82f6;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+
+        @-webkit-keyframes spinner {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+
+            100% {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spinner {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
 
-<body class="flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md border border-gray-200">
+<body class="flex items-center justify-center min-h-screen p-4 bg-gray-100">
+
+    <!-- Verification Form Container -->
+    <div id="verificationForm" class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md border border-gray-200">
         <!-- Header Section -->
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
             VoultofCode Certificate Verification
@@ -71,152 +97,267 @@
             class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 ease-in-out shadow-md">
             Verify Certificate
         </button>
+    </div>
 
-        <!-- Certificate Details Display Area -->
-        <div id="certificateDetails" class="mt-8 p-6 border rounded-lg hidden">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Certificate Details</h2>
-            <div class="space-y-3 text-gray-700">
-                <p><span class="font-medium">NCS ID:</span> <span id="displayCertNumber"></span></p>
-                <p><span class="font-medium">Issuing Authority:</span> <span id="displayIssuingAuthority"></span></p>
-                <p><span class="font-medium">Issue Date:</span> <span id="displayIssueDate"></span></p>
-                <p><span class="font-medium">Expiration Date:</span> <span id="displayExpirationDate"></span></p>
-            </div>
-            <!-- Certificate Status Message -->
-            <div id="statusMessage" class="mt-5 p-3 rounded-md border text-center font-bold text-lg hidden"></div>
+    <!-- Verification Result Container (Initially hidden) -->
+    <div id="verificationResult"
+        class="hidden bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl border border-gray-200">
+        <!-- Header Section -->
+        <div class="flex items-center mb-6 border-b-2 border-gray-200 pb-4">
+            <img id="profilePhoto" src="" alt="Profile Photo" class="w-16 h-16 rounded-full mr-6 object-cover">
+            <h1 id="userName" class="text-2xl font-bold text-gray-900 m-0"></h1>
         </div>
 
-        <!-- Message Box for alerts -->
-        <div id="messageBox" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
-                <p id="messageBoxContent" class="text-gray-800 mb-4"></p>
-                <button id="messageBoxClose"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md">
-                    OK
-                </button>
+        <!-- Internship Details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6 mb-8">
+            <div class="flex flex-col">
+                <span class="font-semibold text-gray-500 text-sm mb-1">Email</span>
+                <span id="userEmail" class="text-base text-gray-900"></span>
             </div>
+            <div class="flex flex-col">
+                <span class="font-semibold text-gray-500 text-sm mb-1">Mobile</span>
+                <span id="userMobile" class="text-base text-gray-900"></span>
+            </div>
+            <div class="flex flex-col">
+                <span class="font-semibold text-gray-500 text-sm mb-1">College</span>
+                <span id="userCollege" class="text-base text-gray-900"></span>
+            </div>
+            <div class="flex flex-col">
+                <span class="font-semibold text-gray-500 text-sm mb-1">Start Date</span>
+                <span id="startDate" class="text-base text-gray-900"></span>
+            </div>
+            <div class="flex flex-col">
+                <span class="font-semibold text-gray-500 text-sm mb-1">Duration</span>
+                <span id="duration" class="text-base text-gray-900"></span>
+            </div>
+        </div>
+
+        <!-- Assignment Status -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Assignment Status</h2>
+            <div id="assignmentsContainer" class="flex gap-4 flex-wrap mb-4">
+                <!-- Assignment items will be injected here by JavaScript -->
+            </div>
+            <div class="flex flex-col mb-4">
+                <span class="font-semibold text-gray-500 text-sm mb-1">Status</span>
+                <span id="internshipStatus" class="text-base font-semibold text-green-600"></span>
+            </div>
+            <div class="flex flex-col">
+                <span class="font-semibold text-gray-500 text-sm mb-1">Remarks</span>
+                <span id="remarks" class="text-base text-gray-900"></span>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <!-- Metric Items -->
+            <div class="flex flex-col items-center text-center">
+                <div id="attendanceProgress" class="circular-progress"
+                    style="background: conic-gradient(#28a745 0deg, #e9ecef 0deg);">
+                    <span class="progress-value"></span>
+                </div>
+                <span class="mt-3 text-sm font-medium text-gray-600">Attendance</span>
+            </div>
+            <div class="flex flex-col items-center text-center">
+                <div id="toolsProgress" class="circular-progress"
+                    style="background: conic-gradient(#28a745 0deg, #e9ecef 0deg);">
+                    <span class="progress-value"></span>
+                </div>
+                <span class="mt-3 text-sm font-medium text-gray-600">Tools</span>
+            </div>
+            <div class="flex flex-col items-center text-center">
+                <div id="communicationProgress" class="circular-progress"
+                    style="background: conic-gradient(#28a745 0deg, #e9ecef 0deg);">
+                    <span class="progress-value"></span>
+                </div>
+                <span class="mt-3 text-sm font-medium text-gray-600">Communication</span>
+            </div>
+            <div class="flex flex-col items-center text-center">
+                <div id="performanceProgress" class="circular-progress"
+                    style="background: conic-gradient(#28a745 0deg, #e9ecef 0deg);">
+                    <span class="progress-value"></span>
+                </div>
+                <span class="mt-3 text-sm font-medium text-gray-600">Performance</span>
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-8 flex justify-center">
+            <button id="backButton"
+                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 transition duration-200 ease-in-out shadow-sm">
+                Go Back
+            </button>
         </div>
     </div>
 
+    <!-- Message Box (Instead of alert()) -->
+    <div id="messageBox" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <p id="messageText" class="text-gray-800 mb-4"></p>
+            <button id="messageCloseButton" class="bg-blue-600 text-white py-2 px-4 rounded-md">OK</button>
+        </div>
+    </div>
+
+    <!-- Loading Spinner (Initially hidden) -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-100 bg-opacity-75 flex items-center justify-center">
+        <div class="h-16 w-16 border-4 border-dashed rounded-full spinner"></div>
+    </div>
+
     <script>
-        // Mock certificate data - In a real application, this would come from a secure backend API.
-        // Each certificate now includes an 'email' field for verification.
-        const mockCertificates = [
-            {
-                number: 'E19E86-0116588288923', // Using student ID as certificate number
-                email: 'satish8102965213@gmail.com',
-                expirationDate: '2025-08-18',
-                issueDate: '2025-06-18',
-                issuingAuthority: 'VoultofCode Internship Program',
-                status: 'valid'
+        // Data for a mock intern profile
+        const mockInternData = {
+            name: "Satish Kumar",
+            email: "satish8102965213@gmail.com",
+            mobile: "8102965213",
+            college: "N/A",
+            startDate: "2025-06-18",
+            duration: "2 Months",
+            status: "Completed",
+            remarks: "Exceeded expectations on all assignments.",
+            assignments: [
+                { id: 'A1', completed: true },
+                { id: 'A2', completed: true },
+                { id: 'A3', completed: true },
+                { id: 'A4', completed: true },
+            ],
+            metrics: {
+                attendance: 91,
+                tools: 95,
+                communication: 93,
+                performance: 90
             }
-        ];
+        };
 
-        // Get DOM elements
-        const emailInput = document.getElementById('emailInput'); // Changed from certificateNumberInput
+        // DOM elements
+        const verificationForm = document.getElementById('verificationForm');
+        const verificationResult = document.getElementById('verificationResult');
+        const emailInput = document.getElementById('emailInput');
+        const emailInputError = document.getElementById('emailInputError');
         const verifyButton = document.getElementById('verifyButton');
-        const certificateDetailsDiv = document.getElementById('certificateDetails');
-        const displayCertNumber = document.getElementById('displayCertNumber');
-        const displayIssuingAuthority = document.getElementById('displayIssuingAuthority');
-        const displayIssueDate = document.getElementById('displayIssueDate');
-        const displayExpirationDate = document.getElementById('displayExpirationDate');
-        const statusMessageDiv = document.getElementById('statusMessage');
-        const emailInputError = document.getElementById('emailInputError'); // Changed from inputError
+        const backButton = document.getElementById('backButton');
+        const loadingOverlay = document.getElementById('loadingOverlay');
         const messageBox = document.getElementById('messageBox');
-        const messageBoxContent = document.getElementById('messageBoxContent');
-        const messageBoxClose = document.getElementById('messageBoxClose');
+        const messageText = document.getElementById('messageText');
+        const messageCloseButton = document.getElementById('messageCloseButton');
 
-        /**
-         * Displays a custom message box instead of alert().
-         * @param {string} message The message to display.
-         */
-        function showMessageBox(message) {
-            messageBoxContent.textContent = message;
+        // Function to show a custom message box
+        const showMessage = (message) => {
+            messageText.textContent = message;
             messageBox.classList.remove('hidden');
-        }
+        };
 
-        /**
-         * Hides the custom message box.
-         */
-        function hideMessageBox() {
+        // Function to hide a custom message box
+        const hideMessage = () => {
             messageBox.classList.add('hidden');
-        }
+        };
 
-        // Event listener for the Verify button
+        // Function to show the loading spinner
+        const showLoading = () => {
+            loadingOverlay.classList.remove('hidden');
+        };
+
+        // Function to hide the loading spinner
+        const hideLoading = () => {
+            loadingOverlay.classList.add('hidden');
+        };
+
+        // Function to validate email
+        const isValidEmail = (email) => {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        };
+
+        // Function to update the circular progress bar
+        const updateCircularProgress = (elementId, percentage) => {
+            const progressElement = document.getElementById(elementId);
+            const valueElement = progressElement.querySelector('.progress-value');
+            const degree = (percentage / 100) * 360;
+            progressElement.style.background = `conic-gradient(#28a745 ${degree}deg, #e9ecef ${degree}deg)`;
+            valueElement.textContent = `${percentage}%`;
+        };
+
+        // Function to render the result page with data
+        const renderResultPage = (data) => {
+            // Update personal details
+            document.getElementById('profilePhoto').src = `https://placehold.co/60x60/cbd5e1/000?text=${data.name.split(' ')[0][0]}${data.name.split(' ')[1][0]}`;
+            document.getElementById('userName').textContent = data.name;
+            document.getElementById('userEmail').textContent = data.email;
+            document.getElementById('userMobile').textContent = data.mobile;
+            document.getElementById('userCollege').textContent = data.college;
+            document.getElementById('startDate').textContent = data.startDate;
+            document.getElementById('duration').textContent = data.duration;
+            document.getElementById('internshipStatus').textContent = data.status;
+            document.getElementById('remarks').textContent = data.remarks;
+
+            // Update assignment status
+            const assignmentsContainer = document.getElementById('assignmentsContainer');
+            assignmentsContainer.innerHTML = '';
+            data.assignments.forEach(assignment => {
+                const assignmentDiv = document.createElement('div');
+                assignmentDiv.className = `flex items-center rounded-md px-3 py-2 text-sm font-medium ${assignment.completed ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'}`;
+                if (assignment.completed) {
+                    assignmentDiv.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-1">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                        </svg>
+                        <span>${assignment.id}</span>
+                    `;
+                } else {
+                    assignmentDiv.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-1 text-red-500">
+                             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                        </svg>
+                        <span>${assignment.id}</span>
+                    `;
+                }
+                assignmentsContainer.appendChild(assignmentDiv);
+            });
+
+            // Update metrics
+            updateCircularProgress('attendanceProgress', data.metrics.attendance);
+            updateCircularProgress('toolsProgress', data.metrics.tools);
+            updateCircularProgress('communicationProgress', data.metrics.communication);
+            updateCircularProgress('performanceProgress', data.metrics.performance);
+
+            // Show the result page and hide the form
+            verificationForm.classList.add('hidden');
+            verificationResult.classList.remove('hidden');
+        };
+
+        // Event listener for the "Verify Certificate" button
         verifyButton.addEventListener('click', () => {
-            const inputEmail = emailInput.value.trim(); // Changed from inputCertNumber
+            const email = emailInput.value.trim();
 
-            // Clear previous error message and hide details
-            emailInputError.classList.add('hidden'); // Updated ID
-            certificateDetailsDiv.classList.add('hidden');
-            statusMessageDiv.classList.add('hidden');
-            statusMessageDiv.className = 'mt-5 p-3 rounded-md border text-center font-bold text-lg hidden'; // Reset classes
+            // Hide previous errors
+            emailInputError.classList.add('hidden');
 
-            // Basic email validation
-            if (!inputEmail || !inputEmail.includes('@') || !inputEmail.includes('.')) {
-                emailInputError.classList.remove('hidden'); // Updated ID
-                showMessageBox('Please enter a valid email ID to verify.');
+            if (!isValidEmail(email)) {
+                emailInputError.classList.remove('hidden');
                 return;
             }
 
-            // Simulate API call delay
+            showLoading();
+
+            // Simulate API call with a delay
             setTimeout(() => {
-                // Find certificate by email (case-insensitive)
-                const foundCertificate = mockCertificates.find(cert => cert.email.toLowerCase() === inputEmail.toLowerCase());
-
-                if (foundCertificate) {
-                    // Display certificate details
-                    displayCertNumber.textContent = foundCertificate.number;
-                    displayIssuingAuthority.textContent = foundCertificate.issuingAuthority;
-                    displayIssueDate.textContent = foundCertificate.issueDate;
-                    displayExpirationDate.textContent = foundCertificate.expirationDate;
-
-                    // Determine and display status based on expiration date
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
-                    const expirationDate = new Date(foundCertificate.expirationDate);
-                    expirationDate.setHours(0, 0, 0, 0); // Normalize expiration date to start of day
-
-                    let statusText = '';
-                    let statusClass = '';
-
-                    if (expirationDate >= today) { // If expiration date is today or in the future
-                        statusText = 'Valid';
-                        statusClass = 'status-valid';
-                    } else {
-                        statusText = 'Expired';
-                        statusClass = 'status-expired';
-                    }
-
-                    statusMessageDiv.textContent = statusText;
-                    statusMessageDiv.classList.add(statusClass);
-                    statusMessageDiv.classList.remove('hidden');
-                    certificateDetailsDiv.classList.remove('hidden');
-
+                hideLoading();
+                // Check if email matches mock data
+                if (email === mockInternData.email.toLowerCase()) {
+                    renderResultPage(mockInternData);
                 } else {
-                    // Certificate not found for the given email
-                    displayCertNumber.textContent = 'N/A';
-                    displayIssuingAuthority.textContent = 'N/A';
-                    displayIssueDate.textContent = 'N/A';
-                    displayExpirationDate.textContent = 'N/A';
-
-                    statusMessageDiv.textContent = 'No Certificate Found for this Email';
-                    statusMessageDiv.classList.add('status-invalid');
-                    statusMessageDiv.classList.remove('hidden');
-                    certificateDetailsDiv.classList.remove('hidden'); // Still show details section, but with N/A
+                    showMessage("No certificate found for this email ID.");
                 }
-            }, 500); // Simulate network delay
+            }, 1500); // 1.5 second delay
         });
 
-        // Event listener for closing the message box
-        messageBoxClose.addEventListener('click', hideMessageBox);
-
-        // Optional: Clear error/details when input changes
-        emailInput.addEventListener('input', () => { // Updated ID
-            emailInputError.classList.add('hidden'); // Updated ID
-            // Optionally hide details immediately if user starts typing again
-            // certificateDetailsDiv.classList.add('hidden');
-            // statusMessageDiv.classList.add('hidden');
+        // Event listener for the "Go Back" button
+        backButton.addEventListener('click', () => {
+            verificationResult.classList.add('hidden');
+            verificationForm.classList.remove('hidden');
+            emailInput.value = ''; // Clear the input field
         });
+
+        // Event listener for the message box close button
+        messageCloseButton.addEventListener('click', hideMessage);
     </script>
 </body>
 
